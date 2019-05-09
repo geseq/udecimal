@@ -103,11 +103,8 @@ func NewF(f float64) Decimal {
 // New returns a new fixed-point decimal, value * 10 ^ exp.
 func New(value int64, exp int32) Decimal {
 	if exp >= 0 {
-		i := value * int64(math.Pow10(int(exp)))
-		if float64(abs(i)) > MAX {
-			return NaN
-		}
-		return NewI(i, 0)
+		mul := int64(math.Pow10(int(exp)))
+		return NewI(value, 0).Mul(NewI(mul, 0))
 	}
 
 	return NewI(value, uint(exp*-1))
@@ -225,6 +222,10 @@ func (f Decimal) Mul(f0 Decimal) Decimal {
 	}
 	if fp0_b != 0 {
 		result = result + (fp_a * fp0_b) + ((fp_b)*fp0_b)/scale
+	}
+
+	if float64(abs(result/scale)) > MAX {
+		return NaN
 	}
 
 	return Decimal{fp: result}
