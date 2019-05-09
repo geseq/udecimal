@@ -100,6 +100,19 @@ func NewF(f float64) Decimal {
 	return Decimal{fp: int64(f*float64(scale) + round)}
 }
 
+// New returns a new fixed-point decimal, value * 10 ^ exp.
+func New(value int64, exp int32) Decimal {
+	if exp >= 0 {
+		i := value * int64(math.Pow10(int(exp)))
+		if float64(abs(i)) > MAX {
+			return NaN
+		}
+		return NewI(i, 0)
+	}
+
+	return NewI(value, uint(exp*-1))
+}
+
 // NewI creates a Decimal for an integer, moving the decimal point n places to the left
 // For example, NewI(123,1) becomes 12.3. If n > 7, the value is truncated
 func NewI(i int64, n uint) Decimal {

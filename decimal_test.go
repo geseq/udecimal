@@ -41,6 +41,41 @@ func TestBasic(t *testing.T) {
 	}
 }
 
+func TestNew(t *testing.T) {
+	f := New(123, 1)
+	if f.String() != "1230" {
+		t.Error("should be equal", f, "1230")
+	}
+	f = New(-123, 1)
+	if f.String() != "-1230" {
+		t.Error("should be equal", f, "-1230")
+	}
+	f = New(123, 0)
+	if f.String() != "123" {
+		t.Error("should be equal", f, "123")
+	}
+	f = New(123456789012, 9)
+	if f.String() != "NaN" {
+		t.Error("should be equal", f, "NaN")
+	}
+	f = New(123, -1)
+	if f.String() != "12.3" {
+		t.Error("should be equal", f, "12.3")
+	}
+	f = New(-123, -1)
+	if f.String() != "-12.3" {
+		t.Error("should be equal", f, "-12.3")
+	}
+	f = New(123456789012, -9)
+	if f.String() != "123.456789" {
+		t.Error("should be equal", f, "123.456789")
+	}
+	f = New(123456789012, -9)
+	if f.StringN(7) != "123.4567890" {
+		t.Error("should be equal", f.StringN(7), "123.4567890")
+	}
+}
+
 func TestNewI(t *testing.T) {
 	f := NewI(123, 1)
 	if f.String() != "12.3" {
