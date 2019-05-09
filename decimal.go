@@ -225,6 +225,7 @@ func (f Decimal) Mul(f0 Decimal) Decimal {
 
 		result = result*scale + fp_b*fp0_a
 	}
+
 	if fp0_b != 0 {
 		result = result + (fp_a * fp0_b) + ((fp_b)*fp0_b)/scale
 	}
