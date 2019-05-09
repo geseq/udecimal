@@ -218,14 +218,15 @@ func (f Decimal) Mul(f0 Decimal) Decimal {
 	var result int64
 
 	if fp0_a != 0 {
-		result = fp_a*fp0_a*scale + fp_b*fp0_a
+		result = fp_a * fp0_a
+		if float64(abs(result)) > MAX {
+			return NaN
+		}
+
+		result = result*scale + fp_b*fp0_a
 	}
 	if fp0_b != 0 {
 		result = result + (fp_a * fp0_b) + ((fp_b)*fp0_b)/scale
-	}
-
-	if float64(abs(result/scale)) > MAX {
-		return NaN
 	}
 
 	return Decimal{fp: result}
