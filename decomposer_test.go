@@ -20,7 +20,7 @@ func TestDecomposerRoundTrip(t *testing.T) {
 			if d.IsNaN() {
 				t.Fatal("failed to parse number")
 			}
-			set := &Fixed{}
+			set := &Decimal{}
 			err := set.Compose(d.Decompose(nil))
 			if err == nil && item.E {
 				t.Fatal("expected error, got <nil>")
@@ -60,7 +60,7 @@ func TestDecomposerCompose(t *testing.T) {
 
 	for _, item := range list {
 		t.Run(item.N, func(t *testing.T) {
-			d := &Fixed{}
+			d := &Decimal{}
 			err := d.Compose(item.Form, item.Neg, item.Coef, item.Exp)
 			if err != nil && !item.Err {
 				t.Fatalf("unexpected error, got %v", err)
