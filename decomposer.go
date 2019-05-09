@@ -12,7 +12,7 @@ import (
 // Decompose returns the internal decimal state into parts.
 // If the provided buf has sufficient capacity, buf may be returned as the coefficient with
 // the value set and length set as appropriate.
-func (f Fixed) Decompose(buf []byte) (form byte, negative bool, coefficient []byte, exponent int32) {
+func (f Decimal) Decompose(buf []byte) (form byte, negative bool, coefficient []byte, exponent int32) {
 	if f.fp == nan {
 		form = 2
 		return
@@ -37,9 +37,9 @@ func (f Fixed) Decompose(buf []byte) (form byte, negative bool, coefficient []by
 
 // Compose sets the internal decimal value from parts. If the value cannot be
 // represented then an error should be returned.
-func (f *Fixed) Compose(form byte, negative bool, coefficient []byte, exponent int32) (err error) {
+func (f *Decimal) Compose(form byte, negative bool, coefficient []byte, exponent int32) (err error) {
 	if f == nil {
-		return errors.New("Fixed must not be nil")
+		return errors.New("Decimal must not be nil")
 	}
 	switch form {
 	default:

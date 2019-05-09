@@ -488,7 +488,7 @@ func TestEncodeDecode(t *testing.T) {
 }
 
 type JStruct struct {
-	F Fixed `json:"f"`
+	F Decimal `json:"f"`
 }
 
 func TestJSON(t *testing.T) {

@@ -12,8 +12,8 @@ import (
 	"strings"
 )
 
-// Fixed is a decimal precision 38.24 number (supports 11.7 digits). It supports NaN.
-type Fixed struct {
+// Decimal is a decimal precision 38.24 number (supports 11.7 digits). It supports NaN.
+type Decimal struct {
 	fp int64
 }
 
@@ -27,20 +27,20 @@ const MAX = float64(99999999999.9999999)
 
 const nan = int64(1<<63 - 1)
 
-var NaN = Fixed{fp: nan}
-var Zero = Fixed{fp: 0}
+var NaN = Decimal{fp: nan}
+var Zero = Decimal{fp: 0}
 
 var errTooLarge = errors.New("significand too large")
 var errFormat = errors.New("invalid encoding")
 
-// NewS creates a new Fixed from a string, returning NaN if the string could not be parsed
-func NewS(s string) Fixed {
+// NewS creates a new Decimal from a string, returning NaN if the string could not be parsed
+func NewS(s string) Decimal {
 	f, _ := NewSErr(s)
 	return f
 }
 
-// NewSErr creates a new Fixed from a string, returning NaN, and error if the string could not be parsed
-func NewSErr(s string) (Fixed, error) {
+// NewSErr creates a new Decimal from a string, returning NaN, and error if the string could not be parsed
+func NewSErr(s string) (Decimal, error) {
 	if strings.ContainsAny(s, "eE") {
 		f, err := strconv.ParseFloat(s, 64)
 		if err != nil {
@@ -74,7 +74,7 @@ func NewSErr(s string) (Fixed, error) {
 	if float64(i) > MAX {
 		return NaN, errTooLarge
 	}
-	return Fixed{fp: sign * (i*scale + f)}, nil
+	return Decimal{fp: sign * (i*scale + f)}, nil
 }
 
 func max(a, b int) int {
@@ -84,10 +84,10 @@ func max(a, b int) int {
 	return b
 }
 
-// NewF creates a Fixed from an float64, rounding at the 8th decimal place
-func NewF(f float64) Fixed {
+// NewF creates a Decimal from an float64, rounding at the 8th decimal place
+func NewF(f float64) Decimal {
 	if math.IsNaN(f) {
-		return Fixed{fp: nan}
+		return Decimal{fp: nan}
 	}
 	if f >= MAX || f <= -MAX {
 		return NaN
@@ -97,12 +97,12 @@ func NewF(f float64) Fixed {
 		round = -0.5
 	}
 
-	return Fixed{fp: int64(f*float64(scale) + round)}
+	return Decimal{fp: int64(f*float64(scale) + round)}
 }
 
-// NewI creates a Fixed for an integer, moving the decimal point n places to the left
+// NewI creates a Decimal for an integer, moving the decimal point n places to the left
 // For example, NewI(123,1) becomes 12.3. If n > 7, the value is truncated
-func NewI(i int64, n uint) Fixed {
+func NewI(i int64, n uint) Decimal {
 	if n > nPlaces {
 		i = i / int64(math.Pow10(int(n-nPlaces)))
 		n = nPlaces
@@ -110,7 +110,7 @@ func NewI(i int64, n uint) Fixed {
 
 	i = i * int64(math.Pow10(int(nPlaces-n)))
 
-	return Fixed{fp: i}
+	return Decimal{fp: i}
 }
 
 // RequireFromString returns a new Decimal from a string representation
@@ -121,7 +121,7 @@ func NewI(i int64, n uint) Fixed {
 //     d := RequireFromString("-123.45")
 //     d2 := RequireFromString(".0001")
 //
-func RequireFromString(value string) Fixed {
+func RequireFromString(value string) Decimal {
 	dec, err := NewSErr(value)
 	if err != nil {
 		panic(err)
@@ -129,11 +129,11 @@ func RequireFromString(value string) Fixed {
 	return dec
 }
 
-func (f Fixed) IsNaN() bool {
+func (f Decimal) IsNaN() bool {
 	return f.fp == nan
 }
 
-func (f Fixed) IsZero() bool {
+func (f Decimal) IsZero() bool {
 	return f.Equal(Zero)
 }
 
@@ -143,46 +143,46 @@ func (f Fixed) IsZero() bool {
 //	 0 if f == 0 or NaN
 //	+1 if f >  0
 //
-func (f Fixed) Sign() int {
+func (f Decimal) Sign() int {
 	if f.IsNaN() {
 		return 0
 	}
 	return f.Cmp(Zero)
 }
 
-// Float converts the Fixed to a float64
-func (f Fixed) Float() float64 {
+// Float converts the Decimal to a float64
+func (f Decimal) Float() float64 {
 	if f.IsNaN() {
 		return math.NaN()
 	}
 	return float64(f.fp) / float64(scale)
 }
 
-// Add adds f0 to f producing a Fixed. If either operand is NaN, NaN is returned
-func (f Fixed) Add(f0 Fixed) Fixed {
+// Add adds f0 to f producing a Decimal. If either operand is NaN, NaN is returned
+func (f Decimal) Add(f0 Decimal) Decimal {
 	if f.IsNaN() || f0.IsNaN() {
 		return NaN
 	}
-	return Fixed{fp: f.fp + f0.fp}
+	return Decimal{fp: f.fp + f0.fp}
 }
 
-// Sub subtracts f0 from f producing a Fixed. If either operand is NaN, NaN is returned
-func (f Fixed) Sub(f0 Fixed) Fixed {
+// Sub subtracts f0 from f producing a Decimal. If either operand is NaN, NaN is returned
+func (f Decimal) Sub(f0 Decimal) Decimal {
 	if f.IsNaN() || f0.IsNaN() {
 		return NaN
 	}
-	return Fixed{fp: f.fp - f0.fp}
+	return Decimal{fp: f.fp - f0.fp}
 }
 
 // Abs returns the absolute value of f. If f is NaN, NaN is returned
-func (f Fixed) Abs() Fixed {
+func (f Decimal) Abs() Decimal {
 	if f.IsNaN() {
 		return NaN
 	}
 	if f.Sign() >= 0 {
 		return f
 	}
-	f0 := Fixed{fp: f.fp * -1}
+	f0 := Decimal{fp: f.fp * -1}
 	return f0
 }
 
@@ -193,8 +193,8 @@ func abs(i int64) int64 {
 	return i * -1
 }
 
-// Mul multiplies f by f0 returning a Fixed. If either operand is NaN, NaN is returned
-func (f Fixed) Mul(f0 Fixed) Fixed {
+// Mul multiplies f by f0 returning a Decimal. If either operand is NaN, NaN is returned
+func (f Decimal) Mul(f0 Decimal) Decimal {
 	if f.IsNaN() || f0.IsNaN() {
 		return NaN
 	}
@@ -214,11 +214,11 @@ func (f Fixed) Mul(f0 Fixed) Fixed {
 		result = result + (fp_a * fp0_b) + ((fp_b)*fp0_b)/scale
 	}
 
-	return Fixed{fp: result}
+	return Decimal{fp: result}
 }
 
-// Div divides f by f0 returning a Fixed. If either operand is NaN, NaN is returned
-func (f Fixed) Div(f0 Fixed) Fixed {
+// Div divides f by f0 returning a Decimal. If either operand is NaN, NaN is returned
+func (f Decimal) Div(f0 Decimal) Decimal {
 	if f.IsNaN() || f0.IsNaN() {
 		return NaN
 	}
@@ -226,7 +226,7 @@ func (f Fixed) Div(f0 Fixed) Fixed {
 }
 
 // Round returns a rounded (half-up, away from zero) to n decimal places
-func (f Fixed) Round(n int) Fixed {
+func (f Decimal) Round(n int) Decimal {
 	if f.IsNaN() {
 		return NaN
 	}
@@ -244,7 +244,7 @@ func (f Fixed) Round(n int) Fixed {
 }
 
 // Equal returns true if the f == f0. If either operand is NaN, false is returned. Use IsNaN() to test for NaN
-func (f Fixed) Equal(f0 Fixed) bool {
+func (f Decimal) Equal(f0 Decimal) bool {
 	if f.IsNaN() || f0.IsNaN() {
 		return false
 	}
@@ -252,29 +252,29 @@ func (f Fixed) Equal(f0 Fixed) bool {
 }
 
 // GreaterThan tests Cmp() for 1
-func (f Fixed) GreaterThan(f0 Fixed) bool {
+func (f Decimal) GreaterThan(f0 Decimal) bool {
 	return f.Cmp(f0) == 1
 }
 
 // GreaterThaOrEqual tests Cmp() for 1 or 0
-func (f Fixed) GreaterThanOrEqual(f0 Fixed) bool {
+func (f Decimal) GreaterThanOrEqual(f0 Decimal) bool {
 	cmp := f.Cmp(f0)
 	return cmp == 1 || cmp == 0
 }
 
 // LessThan tests Cmp() for -1
-func (f Fixed) LessThan(f0 Fixed) bool {
+func (f Decimal) LessThan(f0 Decimal) bool {
 	return f.Cmp(f0) == -1
 }
 
 // LessThan tests Cmp() for -1 or 0
-func (f Fixed) LessThanOrEqual(f0 Fixed) bool {
+func (f Decimal) LessThanOrEqual(f0 Decimal) bool {
 	cmp := f.Cmp(f0)
 	return cmp == -1 || cmp == 0
 }
 
-// Cmp compares two Fixed. If f == f0, return 0. If f > f0, return 1. If f < f0, return -1. If both are NaN, return 0. If f is NaN, return 1. If f0 is NaN, return -1
-func (f Fixed) Cmp(f0 Fixed) int {
+// Cmp compares two Decimal. If f == f0, return 0. If f > f0, return 1. If f < f0, return -1. If both are NaN, return 0. If f is NaN, return 1. If f0 is NaN, return -1
+func (f Decimal) Cmp(f0 Decimal) int {
 	if f.IsNaN() && f0.IsNaN() {
 		return 0
 	}
@@ -294,8 +294,8 @@ func (f Fixed) Cmp(f0 Fixed) int {
 	return 1
 }
 
-// String converts a Fixed to a string, dropping trailing zeros
-func (f Fixed) String() string {
+// String converts a Decimal to a string, dropping trailing zeros
+func (f Decimal) String() string {
 	s, point := f.tostr()
 	if point == -1 {
 		return s
@@ -309,8 +309,8 @@ func (f Fixed) String() string {
 	return s[:point]
 }
 
-// StringN converts a Fixed to a String with a specified number of decimal places, truncating as required
-func (f Fixed) StringN(decimals int) string {
+// StringN converts a Decimal to a String with a specified number of decimal places, truncating as required
+func (f Decimal) StringN(decimals int) string {
 
 	s, point := f.tostr()
 
@@ -324,7 +324,7 @@ func (f Fixed) StringN(decimals int) string {
 	}
 }
 
-func (f Fixed) tostr() (string, int) {
+func (f Decimal) tostr() (string, int) {
 	fp := f.fp
 	if fp == 0 {
 		return "0." + zeros, 1
@@ -364,16 +364,16 @@ func itoa(buf []byte, val int64) []byte {
 	return buf[i:]
 }
 
-// Int return the integer portion of the Fixed, or 0 if NaN
-func (f Fixed) Int() int64 {
+// Int return the integer portion of the Decimal, or 0 if NaN
+func (f Decimal) Int() int64 {
 	if f.IsNaN() {
 		return 0
 	}
 	return f.fp / scale
 }
 
-// Frac return the fractional portion of the Fixed, or NaN if NaN
-func (f Fixed) Frac() float64 {
+// Frac return the fractional portion of the Decimal, or NaN if NaN
+func (f Decimal) Frac() float64 {
 	if f.IsNaN() {
 		return math.NaN()
 	}
@@ -381,7 +381,7 @@ func (f Fixed) Frac() float64 {
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
-func (f *Fixed) UnmarshalBinary(data []byte) error {
+func (f *Decimal) UnmarshalBinary(data []byte) error {
 	fp, n := binary.Varint(data)
 	if n < 0 {
 		return errFormat
@@ -391,28 +391,28 @@ func (f *Fixed) UnmarshalBinary(data []byte) error {
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
-func (f Fixed) MarshalBinary() (data []byte, err error) {
+func (f Decimal) MarshalBinary() (data []byte, err error) {
 	var buffer [binary.MaxVarintLen64]byte
 	n := binary.PutVarint(buffer[:], f.fp)
 	return buffer[:n], nil
 }
 
-// WriteTo write the Fixed to an io.Writer, returning the number of bytes written
-func (f Fixed) WriteTo(w io.ByteWriter) error {
+// WriteTo write the Decimal to an io.Writer, returning the number of bytes written
+func (f Decimal) WriteTo(w io.ByteWriter) error {
 	return writeVarint(w, f.fp)
 }
 
-// ReadFrom reads a Fixed from an io.Reader
-func ReadFrom(r io.ByteReader) (Fixed, error) {
+// ReadFrom reads a Decimal from an io.Reader
+func ReadFrom(r io.ByteReader) (Decimal, error) {
 	fp, err := binary.ReadVarint(r)
 	if err != nil {
 		return NaN, err
 	}
-	return Fixed{fp: fp}, nil
+	return Decimal{fp: fp}, nil
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
-func (f *Fixed) UnmarshalJSON(bytes []byte) error {
+func (f *Decimal) UnmarshalJSON(bytes []byte) error {
 	s := string(bytes)
 	if s == "null" {
 		return nil
@@ -427,7 +427,7 @@ func (f *Fixed) UnmarshalJSON(bytes []byte) error {
 }
 
 // MarshalJSON implements the json.Marshaler interface.
-func (f Fixed) MarshalJSON() ([]byte, error) {
+func (f Decimal) MarshalJSON() ([]byte, error) {
 	buffer := make([]byte, 24)
 	return itoa(buffer, f.fp), nil
 }

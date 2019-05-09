@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func BenchmarkAddFixed(b *testing.B) {
+func BenchmarkAddDecimal(b *testing.B) {
 	f0 := NewF(1)
 	f1 := NewF(1)
 
@@ -15,7 +15,7 @@ func BenchmarkAddFixed(b *testing.B) {
 		f1 = f1.Add(f0)
 	}
 }
-func BenchmarkAddDecimal(b *testing.B) {
+func BenchmarkAddShopspringDecimal(b *testing.B) {
 	f0 := decimal.NewFromFloat(1)
 	f1 := decimal.NewFromFloat(1)
 
@@ -40,7 +40,7 @@ func BenchmarkAddBigFloat(b *testing.B) {
 	}
 }
 
-func BenchmarkMulFixed(b *testing.B) {
+func BenchmarkMulDecimal(b *testing.B) {
 	f0 := NewF(123456789.0)
 	f1 := NewF(1234.0)
 
@@ -48,7 +48,7 @@ func BenchmarkMulFixed(b *testing.B) {
 		f0.Mul(f1)
 	}
 }
-func BenchmarkMulDecimal(b *testing.B) {
+func BenchmarkMulShopspringDecimal(b *testing.B) {
 	f0 := decimal.NewFromFloat(123456789.0)
 	f1 := decimal.NewFromFloat(1234.0)
 
@@ -75,7 +75,7 @@ func BenchmarkMulBigFloat(b *testing.B) {
 	}
 }
 
-func BenchmarkDivFixed(b *testing.B) {
+func BenchmarkDivDecimal(b *testing.B) {
 	f0 := NewF(123456789.0)
 	f1 := NewF(1234.0)
 
@@ -83,7 +83,7 @@ func BenchmarkDivFixed(b *testing.B) {
 		f0.Div(f1)
 	}
 }
-func BenchmarkDivDecimal(b *testing.B) {
+func BenchmarkDivShopspringDecimal(b *testing.B) {
 	f0 := decimal.NewFromFloat(123456789.0)
 	f1 := decimal.NewFromFloat(1234.0)
 
@@ -110,7 +110,7 @@ func BenchmarkDivBigFloat(b *testing.B) {
 	}
 }
 
-func BenchmarkCmpFixed(b *testing.B) {
+func BenchmarkCmpDecimal(b *testing.B) {
 	f0 := NewF(123456789.0)
 	f1 := NewF(1234.0)
 
@@ -118,7 +118,7 @@ func BenchmarkCmpFixed(b *testing.B) {
 		f0.Cmp(f1)
 	}
 }
-func BenchmarkCmpDecimal(b *testing.B) {
+func BenchmarkCmpShopspringDecimal(b *testing.B) {
 	f0 := decimal.NewFromFloat(123456789.0)
 	f1 := decimal.NewFromFloat(1234.0)
 
@@ -143,21 +143,21 @@ func BenchmarkCmpBigFloat(b *testing.B) {
 	}
 }
 
-func BenchmarkStringFixed(b *testing.B) {
+func BenchmarkStringDecimal(b *testing.B) {
 	f0 := NewF(123456789.12345)
 
 	for i := 0; i < b.N; i++ {
 		f0.String()
 	}
 }
-func BenchmarkStringNFixed(b *testing.B) {
+func BenchmarkStringNDecimal(b *testing.B) {
 	f0 := NewF(123456789.12345)
 
 	for i := 0; i < b.N; i++ {
 		f0.StringN(5)
 	}
 }
-func BenchmarkStringDecimal(b *testing.B) {
+func BenchmarkStringShopspringDecimal(b *testing.B) {
 	f0 := decimal.NewFromFloat(123456789.12345)
 
 	for i := 0; i < b.N; i++ {
