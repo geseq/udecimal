@@ -447,19 +447,3 @@ func (f Decimal) MarshalJSON() ([]byte, error) {
 	buffer := make([]byte, 24)
 	return itoa(buffer, f.fp), nil
 }
-
-func (f Decimal) ExtensionType() int8 {
-	return 99
-}
-
-func (f Decimal) Len() int {
-	return binary.MaxVarintLen64
-}
-
-func (f Decimal) MarshalBinaryTo(b []byte) error {
-	var buffer [binary.MaxVarintLen64]byte
-	binary.PutVarint(buffer[:], f.fp)
-	copy(b, buffer[:])
-
-	return nil
-}
