@@ -3,7 +3,7 @@ package decimal_test
 import (
 	"bytes"
 	"encoding/json"
-	. "github.com/earncef/decimal"
+	. "github.com/geseq/decimal"
 	"math"
 	"testing"
 )
