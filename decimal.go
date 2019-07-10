@@ -406,6 +406,16 @@ func (f *Decimal) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+// UnmarshalBinaryData Unmarshals data and returns n
+func (f *Decimal) UnmarshalBinaryData(data []byte) (rem []byte, err error) {
+	fp, n := binary.Varint(data)
+	if n < 0 {
+		return data, errFormat
+	}
+	f.fp = fp
+	return data[n:], err
+}
+
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
 func (f Decimal) MarshalBinary() (data []byte, err error) {
 	var buffer [binary.MaxVarintLen64]byte
