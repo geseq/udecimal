@@ -14,21 +14,21 @@ import (
 
 // Decimal is a decimal precision 38.24 number (supports 11.7 digits). It supports NaN.
 type Decimal struct {
-	fp int64
+	fp uint64
 }
 
 // the following constants can be changed to configure a different number of decimal places - these are
 // the only required changes. only 18 significant digits are supported due to NaN
 
-const nPlaces = 7
-const scale = int64(10 * 10 * 10 * 10 * 10 * 10 * 10)
-const zeros = "0000000"
-const MAX = float64(99999999999.9999999)
+const nPlaces = 8
+const scale = uint64(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)
+const zeros = "00000000"
+const MAX = float64(99999999999.99999999)
 
-const nan = int64(1<<63 - 1)
+const nan = uint64(1<<63 - 1)
 
 var NaN = Decimal{fp: nan}
-var Zero = Decimal{fp: 0}
+var ZERO = Decimal{fp: 0}
 
 var errTooLarge = errors.New("significand too large")
 var errFormat = errors.New("invalid encoding")
@@ -52,29 +52,50 @@ func NewSErr(s string) (Decimal, error) {
 		return NaN, nil
 	}
 	period := strings.Index(s, ".")
-	var i int64
-	var f int64
-	var sign int64 = 1
+	var i uint64
+	var f uint64
+	var err error
 	if period == -1 {
-		i, _ = strconv.ParseInt(s, 10, 64)
-		if i < 0 {
-			sign = -1
-			i = i * -1
+		i, err = strconv.ParseUint(s, 10, 64)
+		if err != nil {
+			return NaN, errors.New("cannot parse")
 		}
 	} else {
-		i, _ = strconv.ParseInt(s[:period], 10, 64)
-		if i < 0 {
-			sign = -1
-			i = i * -1
+		if len(s[:period]) > 0 {
+			i, err = strconv.ParseUint(s[:period], 10, 64)
+			if err != nil {
+				return NaN, errors.New("cannot parse")
+			}
 		}
 		fs := s[period+1:]
 		fs = fs + zeros[:max(0, nPlaces-len(fs))]
-		f, _ = strconv.ParseInt(fs[0:nPlaces], 10, 64)
+		f, err = strconv.ParseUint(fs[0:nPlaces], 10, 64)
+		if err != nil {
+			return NaN, errors.New("cannot parse")
+		}
 	}
 	if float64(i) > MAX {
 		return NaN, errTooLarge
 	}
-	return Decimal{fp: sign * (i*scale + f)}, nil
+	return Decimal{fp: (i*scale + f)}, nil
+}
+
+// Parse creates a new Fixed from a string, returning NaN, and error if the string could not be parsed. Same as NewSErr
+// but more standard naming
+func Parse(s string) (Decimal, error) {
+	return NewSErr(s)
+
+}
+
+// MustParse creates a new Fixed from a string, and panics if the string could not be parsed
+func MustParse(s string) Decimal {
+	f, err := NewSErr(s)
+	if err != nil {
+		panic(err)
+
+	}
+	return f
+
 }
 
 func max(a, b int) int {
@@ -97,13 +118,13 @@ func NewF(f float64) Decimal {
 		round = -0.5
 	}
 
-	return Decimal{fp: int64(f*float64(scale) + round)}
+	return Decimal{fp: uint64(f*float64(scale) + round)}
 }
 
 // New returns a new fixed-point decimal, value * 10 ^ exp.
-func New(value int64, exp int32) Decimal {
+func New(value uint64, exp int32) Decimal {
 	if exp >= 0 {
-		mul := int64(math.Pow10(int(exp)))
+		mul := uint64(math.Pow10(int(exp)))
 		return NewI(value, 0).Mul(NewI(mul, 0))
 	}
 
@@ -112,31 +133,15 @@ func New(value int64, exp int32) Decimal {
 
 // NewI creates a Decimal for an integer, moving the decimal point n places to the left
 // For example, NewI(123,1) becomes 12.3. If n > 7, the value is truncated
-func NewI(i int64, n uint) Decimal {
+func NewI(i uint64, n uint) Decimal {
 	if n > nPlaces {
-		i = i / int64(math.Pow10(int(n-nPlaces)))
+		i = i / uint64(math.Pow10(int(n-nPlaces)))
 		n = nPlaces
 	}
 
-	i = i * int64(math.Pow10(int(nPlaces-n)))
+	i = i * uint64(math.Pow10(int(nPlaces-n)))
 
 	return Decimal{fp: i}
-}
-
-// RequireFromString returns a new Decimal from a string representation
-// or panics if NewFromString would have returned an error.
-//
-// Example:
-//
-//     d := RequireFromString("-123.45")
-//     d2 := RequireFromString(".0001")
-//
-func RequireFromString(value string) Decimal {
-	dec, err := NewSErr(value)
-	if err != nil {
-		panic(err)
-	}
-	return dec
 }
 
 func (f Decimal) IsNaN() bool {
@@ -144,20 +149,7 @@ func (f Decimal) IsNaN() bool {
 }
 
 func (f Decimal) IsZero() bool {
-	return f.Equal(Zero)
-}
-
-// Sign returns:
-//
-//	-1 if f <  0
-//	 0 if f == 0 or NaN
-//	+1 if f >  0
-//
-func (f Decimal) Sign() int {
-	if f.IsNaN() {
-		return 0
-	}
-	return f.Cmp(Zero)
+	return f.Equal(ZERO)
 }
 
 // Float converts the Decimal to a float64
@@ -178,29 +170,11 @@ func (f Decimal) Add(f0 Decimal) Decimal {
 
 // Sub subtracts f0 from f producing a Decimal. If either operand is NaN, NaN is returned
 func (f Decimal) Sub(f0 Decimal) Decimal {
-	if f.IsNaN() || f0.IsNaN() {
+	if f.IsNaN() || f0.IsNaN() || f.fp < f0.fp {
 		return NaN
 	}
+
 	return Decimal{fp: f.fp - f0.fp}
-}
-
-// Abs returns the absolute value of f. If f is NaN, NaN is returned
-func (f Decimal) Abs() Decimal {
-	if f.IsNaN() {
-		return NaN
-	}
-	if f.Sign() >= 0 {
-		return f
-	}
-	f0 := Decimal{fp: f.fp * -1}
-	return f0
-}
-
-func abs(i int64) int64 {
-	if i >= 0 {
-		return i
-	}
-	return i * -1
 }
 
 // Mul multiplies f by f0 returning a Decimal. If either operand is NaN, NaN is returned
@@ -215,11 +189,11 @@ func (f Decimal) Mul(f0 Decimal) Decimal {
 	fp0_a := f0.fp / scale
 	fp0_b := f0.fp % scale
 
-	var result int64
+	var result uint64
 
 	if fp0_a != 0 {
 		result = fp_a * fp0_a
-		if float64(abs(result)) > MAX {
+		if float64(result) > MAX {
 			return NaN
 		}
 
@@ -327,7 +301,6 @@ func (f Decimal) String() string {
 
 // StringN converts a Decimal to a String with a specified number of decimal places, truncating as required
 func (f Decimal) StringN(decimals int) string {
-
 	s, point := f.tostr()
 
 	if point == -1 {
@@ -355,12 +328,7 @@ func (f Decimal) tostr() (string, int) {
 	return string(b), len(b) - nPlaces - 1
 }
 
-func itoa(buf []byte, val int64) []byte {
-	neg := val < 0
-	if neg {
-		val = val * -1
-	}
-
+func itoa(buf []byte, val uint64) []byte {
 	i := len(buf) - 1
 	idec := i - nPlaces
 	for val >= 10 || i >= idec {
@@ -373,15 +341,11 @@ func itoa(buf []byte, val int64) []byte {
 		val /= 10
 	}
 	buf[i] = byte(val + '0')
-	if neg {
-		i--
-		buf[i] = '-'
-	}
 	return buf[i:]
 }
 
 // Int return the integer portion of the Decimal, or 0 if NaN
-func (f Decimal) Int() int64 {
+func (f Decimal) Int() uint64 {
 	if f.IsNaN() {
 		return 0
 	}
@@ -398,7 +362,7 @@ func (f Decimal) Frac() float64 {
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (f *Decimal) UnmarshalBinary(data []byte) error {
-	fp, n := binary.Varint(data)
+	fp, n := binary.Uvarint(data)
 	if n < 0 {
 		return errFormat
 	}
@@ -408,7 +372,7 @@ func (f *Decimal) UnmarshalBinary(data []byte) error {
 
 // UnmarshalBinaryData Unmarshals data and returns n
 func (f *Decimal) UnmarshalBinaryData(data []byte) (rem []byte, err error) {
-	fp, n := binary.Varint(data)
+	fp, n := binary.Uvarint(data)
 	if n < 0 {
 		return data, errFormat
 	}
@@ -419,18 +383,18 @@ func (f *Decimal) UnmarshalBinaryData(data []byte) (rem []byte, err error) {
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
 func (f Decimal) MarshalBinary() (data []byte, err error) {
 	var buffer [binary.MaxVarintLen64]byte
-	n := binary.PutVarint(buffer[:], f.fp)
+	n := binary.PutUvarint(buffer[:], f.fp)
 	return buffer[:n], nil
 }
 
 // WriteTo write the Decimal to an io.Writer, returning the number of bytes written
 func (f Decimal) WriteTo(w io.ByteWriter) error {
-	return writeVarint(w, f.fp)
+	return writeUvarint(w, f.fp)
 }
 
 // ReadFrom reads a Decimal from an io.Reader
 func ReadFrom(r io.ByteReader) (Decimal, error) {
-	fp, err := binary.ReadVarint(r)
+	fp, err := binary.ReadUvarint(r)
 	if err != nil {
 		return NaN, err
 	}
@@ -441,6 +405,10 @@ func ReadFrom(r io.ByteReader) (Decimal, error) {
 func (f *Decimal) UnmarshalJSON(bytes []byte) error {
 	s := string(bytes)
 	if s == "null" {
+		return nil
+	}
+	if s == "\"NaN\"" {
+		*f = NaN
 		return nil
 	}
 
@@ -454,6 +422,10 @@ func (f *Decimal) UnmarshalJSON(bytes []byte) error {
 
 // MarshalJSON implements the json.Marshaler interface.
 func (f Decimal) MarshalJSON() ([]byte, error) {
+	if f.IsNaN() {
+		return []byte("\"NaN\""), nil
+	}
+
 	buffer := make([]byte, 24)
 	return itoa(buffer, f.fp), nil
 }

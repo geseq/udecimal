@@ -3,9 +3,10 @@ package decimal_test
 import (
 	"bytes"
 	"encoding/json"
-	. "github.com/geseq/decimal"
 	"math"
 	"testing"
+
+	. "github.com/geseq/decimal"
 )
 
 func TestBasic(t *testing.T) {
@@ -46,10 +47,6 @@ func TestNew(t *testing.T) {
 	if f.String() != "1230" {
 		t.Error("should be equal", f, "1230")
 	}
-	f = New(-123, 1)
-	if f.String() != "-1230" {
-		t.Error("should be equal", f, "-1230")
-	}
 	f = New(123, 0)
 	if f.String() != "123" {
 		t.Error("should be equal", f, "123")
@@ -62,11 +59,7 @@ func TestNew(t *testing.T) {
 	if f.String() != "12.3" {
 		t.Error("should be equal", f, "12.3")
 	}
-	f = New(-123, -1)
-	if f.String() != "-12.3" {
-		t.Error("should be equal", f, "-12.3")
-	}
-	f = New(123456789012, -9)
+	f = New(123456789001, -9)
 	if f.String() != "123.456789" {
 		t.Error("should be equal", f, "123.456789")
 	}
@@ -74,6 +67,37 @@ func TestNew(t *testing.T) {
 	if f.StringN(7) != "123.4567890" {
 		t.Error("should be equal", f.StringN(7), "123.4567890")
 	}
+	f = New(123456789012, -9)
+	if f.StringN(8) != "123.45678901" {
+		t.Error("should be equal", f.StringN(8), "123.45678901")
+	}
+
+}
+
+func TestParse(t *testing.T) {
+	_, err := Parse("123")
+	if err != nil {
+		t.Fail()
+
+	}
+	_, err = Parse("abc")
+	if err == nil {
+		t.Fail()
+
+	}
+
+}
+
+func TestMustParse(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+
+		}
+
+	}()
+	_ = MustParse("abc")
+
 }
 
 func TestNewI(t *testing.T) {
@@ -81,15 +105,11 @@ func TestNewI(t *testing.T) {
 	if f.String() != "12.3" {
 		t.Error("should be equal", f, "12.3")
 	}
-	f = NewI(-123, 1)
-	if f.String() != "-12.3" {
-		t.Error("should be equal", f, "-12.3")
-	}
 	f = NewI(123, 0)
 	if f.String() != "123" {
 		t.Error("should be equal", f, "123")
 	}
-	f = NewI(123456789012, 9)
+	f = NewI(123456789001, 9)
 	if f.String() != "123.456789" {
 		t.Error("should be equal", f, "123.456789")
 	}
@@ -97,27 +117,10 @@ func TestNewI(t *testing.T) {
 	if f.StringN(7) != "123.4567890" {
 		t.Error("should be equal", f.StringN(7), "123.4567890")
 	}
-
-}
-
-func TestSign(t *testing.T) {
-	f0 := NewS("0")
-	if f0.Sign() != 0 {
-		t.Error("should be equal", f0.Sign(), 0)
+	f = NewI(123456789012, 9)
+	if f.StringN(8) != "123.45678901" {
+		t.Error("should be equal", f.StringN(8), "123.45678901")
 	}
-	f0 = NewS("NaN")
-	if f0.Sign() != 0 {
-		t.Error("should be equal", f0.Sign(), 0)
-	}
-	f0 = NewS("-100")
-	if f0.Sign() != -1 {
-		t.Error("should be equal", f0.Sign(), -1)
-	}
-	f0 = NewS("100")
-	if f0.Sign() != 1 {
-		t.Error("should be equal", f0.Sign(), 1)
-	}
-
 }
 
 func TestMaxValue(t *testing.T) {
@@ -130,8 +133,8 @@ func TestMaxValue(t *testing.T) {
 		t.Error("should be equal", f0, "NaN")
 	}
 	f0 = NewS("-12345678901")
-	if f0.String() != "-12345678901" {
-		t.Error("should be equal", f0, "-12345678901")
+	if f0.String() != "NaN" {
+		t.Error("should be equal", f0, "NaN")
 	}
 	f0 = NewS("-123456789012")
 	if f0.String() != "NaN" {
@@ -141,17 +144,17 @@ func TestMaxValue(t *testing.T) {
 	if f0.String() != "99999999999" {
 		t.Error("should be equal", f0, "99999999999")
 	}
-	f0 = NewS("9.9999999")
-	if f0.String() != "9.9999999" {
-		t.Error("should be equal", f0, "9.9999999")
+	f0 = NewS("9.99999999")
+	if f0.String() != "9.99999999" {
+		t.Error("should be equal", f0, "9.99999999")
 	}
-	f0 = NewS("99999999999.9999999")
-	if f0.String() != "99999999999.9999999" {
-		t.Error("should be equal", f0, "99999999999.9999999")
+	f0 = NewS("99999999999.99999999")
+	if f0.String() != "99999999999.99999999" {
+		t.Error("should be equal", f0, "99999999999.99999999")
 	}
 	f0 = NewS("99999999999.12345678901234567890")
-	if f0.String() != "99999999999.1234567" {
-		t.Error("should be equal", f0, "99999999999.1234567")
+	if f0.String() != "99999999999.12345678" {
+		t.Error("should be equal", f0, "99999999999.12345678")
 	}
 
 }
@@ -175,7 +178,6 @@ func TestFloat(t *testing.T) {
 	if !f1.Equal(f2) {
 		t.Error("should be equal", f1, f2)
 	}
-
 }
 
 func TestInfinite(t *testing.T) {
@@ -232,19 +234,16 @@ func TestAddSub(t *testing.T) {
 
 func TestAbs(t *testing.T) {
 	f := NewS("NaN")
-	f = f.Abs()
 	if !f.IsNaN() {
 		t.Error("should be NaN", f)
 	}
 	f = NewS("1")
-	f = f.Abs()
 	if f.String() != "1" {
 		t.Error("should be equal", f, "1")
 	}
 	f = NewS("-1")
-	f = f.Abs()
-	if f.String() != "1" {
-		t.Error("should be equal", f, "1")
+	if f.String() != "NaN" {
+		t.Error("should be equal", f, "NaN")
 	}
 }
 
@@ -268,32 +267,32 @@ func TestMulDiv(t *testing.T) {
 	f1 = NewS("-1000")
 
 	f2 = f0.Mul(f1)
-	if f2.String() != "-123456" {
-		t.Error("should be equal", f2.String(), "-123456")
+	if f2.String() != "NaN" {
+		t.Error("should be equal", f2.String(), "NaN")
 	}
 
 	f0 = NewS("-123.456")
 	f1 = NewS("-1000")
 
 	f2 = f0.Mul(f1)
-	if f2.String() != "123456" {
-		t.Error("should be equal", f2.String(), "123456")
+	if f2.String() != "NaN" {
+		t.Error("should be equal", f2.String(), "NaN")
 	}
 
 	f0 = NewS("123.456")
 	f1 = NewS("-1000")
 
 	f2 = f0.Mul(f1)
-	if f2.String() != "-123456" {
-		t.Error("should be equal", f2.String(), "-123456")
+	if f2.String() != "NaN" {
+		t.Error("should be equal", f2.String(), "NaN")
 	}
 
 	f0 = NewS("-123.456")
 	f1 = NewS("-1000")
 
 	f2 = f0.Mul(f1)
-	if f2.String() != "123456" {
-		t.Error("should be equal", f2.String(), "123456")
+	if f2.String() != "NaN" {
+		t.Error("should be equal", f2.String(), "NaN")
 	}
 
 	f0 = NewS("10000.1")
@@ -313,8 +312,8 @@ func TestMulDiv(t *testing.T) {
 	f1 = NewS("3")
 
 	f2 = f0.Div(f1)
-	if f2.String() != "0.6666667" {
-		t.Error("should be equal", f2.String(), "0.6666667")
+	if f2.String() != "0.66666667" {
+		t.Error("should be equal", f2.String(), "0.66666667")
 	}
 
 	f0 = NewS("1000")
@@ -348,43 +347,42 @@ func TestNegatives(t *testing.T) {
 	f1 := NewS("100")
 
 	f2 := f0.Sub(f1)
-	if f2.String() != "-1" {
-		t.Error("should be equal", f2.String(), "-1")
+	if f2.String() != "NaN" {
+		t.Error("should be equal", f2.String(), "NaN")
 	}
 	f0 = NewS("-1")
 	f1 = NewS("-1")
 
 	f2 = f0.Sub(f1)
-	if f2.String() != "0" {
-		t.Error("should be equal", f2.String(), "0")
+	if f2.String() != "NaN" {
+		t.Error("should be equal", f2.String(), "NaN")
 	}
 	f0 = NewS(".001")
 	f1 = NewS(".002")
 
 	f2 = f0.Sub(f1)
-	if f2.String() != "-0.001" {
-		t.Error("should be equal", f2.String(), "-0.001")
+	if f2.String() != "NaN" {
+		t.Error("should be equal", f2.String(), "NaN")
 	}
 }
 
 func TestOverflow(t *testing.T) {
-	f0 := NewF(1.1234567)
-	if f0.String() != "1.1234567" {
-		t.Error("should be equal", f0.String(), "1.1234567")
+	f0 := NewF(1.12345678)
+	if f0.String() != "1.12345678" {
+		t.Error("should be equal", f0.String(), "1.12345678")
 	}
 	f0 = NewF(1.123456789123)
-	if f0.String() != "1.1234568" {
-		t.Error("should be equal", f0.String(), "1.1234568")
+	if f0.String() != "1.12345679" {
+		t.Error("should be equal", f0.String(), "1.12345679")
 	}
 	f0 = NewF(1.0 / 3.0)
-	if f0.String() != "0.3333333" {
-		t.Error("should be equal", f0.String(), "0.3333333")
+	if f0.String() != "0.33333333" {
+		t.Error("should be equal", f0.String(), "0.33333333")
 	}
 	f0 = NewF(2.0 / 3.0)
-	if f0.String() != "0.6666667" {
-		t.Error("should be equal", f0.String(), "0.6666667")
+	if f0.String() != "0.66666667" {
+		t.Error("should be equal", f0.String(), "0.66666667")
 	}
-
 }
 
 func TestNaN(t *testing.T) {
@@ -484,13 +482,13 @@ func TestRound(t *testing.T) {
 	f0 = NewS("-1.12345")
 	f1 = f0.Round(3)
 
-	if f1.String() != "-1.123" {
-		t.Error("should be equal", f1, "-1.123")
+	if f1.String() != "NaN" {
+		t.Error("should be equal", f1, "NaN")
 	}
 	f1 = f0.Round(4)
 
-	if f1.String() != "-1.1235" {
-		t.Error("should be equal", f1, "-1.1235")
+	if f1.String() != "NaN" {
+		t.Error("should be equal", f1, "NaN")
 	}
 }
 
@@ -540,7 +538,7 @@ func TestJSON(t *testing.T) {
 		t.Error(err)
 	}
 
-	j.F = Zero
+	j.F = ZERO
 
 	dec := json.NewDecoder(&buf)
 
@@ -552,4 +550,36 @@ func TestJSON(t *testing.T) {
 	if !j.F.Equal(f) {
 		t.Error("don't match", j.F, f)
 	}
+}
+
+func TestJSON_NaN(t *testing.T) {
+	j := JStruct{}
+
+	f := NewS("NaN")
+	j.F = f
+
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+
+	err := enc.Encode(&j)
+	if err != nil {
+		t.Error(err)
+
+	}
+
+	j.F = ZERO
+
+	dec := json.NewDecoder(&buf)
+
+	err = dec.Decode(&j)
+	if err != nil {
+		t.Error(err)
+
+	}
+
+	if !j.F.IsNaN() {
+		t.Error("did not decode NaN", j.F, f)
+
+	}
+
 }

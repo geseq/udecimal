@@ -18,12 +18,3 @@ func writeUvarint(w io.ByteWriter, x uint64) error {
 	}
 	return w.WriteByte(byte(x))
 }
-
-// WriteVarint encodes an int64 onto w
-func writeVarint(w io.ByteWriter, x int64) error {
-	ux := uint64(x) << 1
-	if x < 0 {
-		ux = ^ux
-	}
-	return writeUvarint(w, ux)
-}
