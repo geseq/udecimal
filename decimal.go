@@ -238,7 +238,11 @@ func (f Decimal) Equal(f0 Decimal) bool {
 	if f.IsNaN() || f0.IsNaN() {
 		return false
 	}
-	return f.Cmp(f0) == 0
+
+	if f.fp == f0.fp {
+		return true
+	}
+	return false
 }
 
 // GreaterThan tests Cmp() for 1
