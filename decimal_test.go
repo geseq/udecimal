@@ -42,6 +42,42 @@ func TestBasic(t *testing.T) {
 	}
 }
 
+func TestEqual(t *testing.T) {
+	f0 := NaN
+	f1 := NaN
+
+	if f0.Equal(f1) {
+		t.Error("should not be equal", f0, f1)
+	}
+
+	f1 = NewS("123.456")
+	if f0.Equal(f1) {
+		t.Error("should not be equal", f0, f1)
+	}
+
+	if f1.Equal(f0) {
+		t.Error("should not be equal", f0, f1)
+	}
+
+	f1 = Zero
+	if f0.Equal(f1) {
+		t.Error("should not be equal", f0, f1)
+	}
+
+	if f1.Equal(f0) {
+		t.Error("should not be equal", f0, f1)
+	}
+
+	f0 = Zero
+	if !f0.Equal(f1) {
+		t.Error("should be equal", f0, f1)
+	}
+
+	if f0.Int() != 0 {
+		t.Error("should be equal", f0.Int(), 0)
+	}
+}
+
 func TestNew(t *testing.T) {
 	f := New(123, 1)
 	if f.String() != "1230" {
