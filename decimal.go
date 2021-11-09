@@ -247,24 +247,50 @@ func (f Decimal) Equal(f0 Decimal) bool {
 
 // GreaterThan tests Cmp() for 1
 func (f Decimal) GreaterThan(f0 Decimal) bool {
-	return f.Cmp(f0) == 1
+	if f.IsNaN() || f0.IsNaN() {
+		return false
+	}
+
+	if f.fp > f0.fp {
+		return true
+	}
+	return false
 }
 
 // GreaterThaOrEqual tests Cmp() for 1 or 0
 func (f Decimal) GreaterThanOrEqual(f0 Decimal) bool {
-	cmp := f.Cmp(f0)
-	return cmp == 1 || cmp == 0
+	if f.IsNaN() || f0.IsNaN() {
+		return false
+	}
+
+	if f.fp >= f0.fp {
+		return true
+	}
+	return false
 }
 
 // LessThan tests Cmp() for -1
 func (f Decimal) LessThan(f0 Decimal) bool {
-	return f.Cmp(f0) == -1
+	if f.IsNaN() || f0.IsNaN() {
+		return false
+	}
+
+	if f.fp < f0.fp {
+		return true
+	}
+	return false
 }
 
 // LessThan tests Cmp() for -1 or 0
 func (f Decimal) LessThanOrEqual(f0 Decimal) bool {
-	cmp := f.Cmp(f0)
-	return cmp == -1 || cmp == 0
+	if f.IsNaN() || f0.IsNaN() {
+		return false
+	}
+
+	if f.fp <= f0.fp {
+		return true
+	}
+	return false
 }
 
 // Cmp compares two Decimal. If f == f0, return 0. If f > f0, return 1. If f < f0, return -1. If both are NaN, return 0. If f is NaN, return 1. If f0 is NaN, return -1
