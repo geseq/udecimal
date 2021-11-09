@@ -245,7 +245,7 @@ func (f Decimal) Equal(f0 Decimal) bool {
 	return false
 }
 
-// GreaterThan tests Cmp() for 1
+// GreaterThan returns true if the f > f0. If either operand is NaN, false is returned. Use IsNaN() to test for NaN
 func (f Decimal) GreaterThan(f0 Decimal) bool {
 	if f.IsNaN() || f0.IsNaN() {
 		return false
@@ -257,7 +257,7 @@ func (f Decimal) GreaterThan(f0 Decimal) bool {
 	return false
 }
 
-// GreaterThaOrEqual tests Cmp() for 1 or 0
+// GreaterThaOrEqual returns true if the f >= f0. If either operand is NaN, false is returned. Use IsNaN() to test for NaN
 func (f Decimal) GreaterThanOrEqual(f0 Decimal) bool {
 	if f.IsNaN() || f0.IsNaN() {
 		return false
@@ -269,7 +269,7 @@ func (f Decimal) GreaterThanOrEqual(f0 Decimal) bool {
 	return false
 }
 
-// LessThan tests Cmp() for -1
+// LessThan returns true if the f < f0. If either operand is NaN, false is returned. Use IsNaN() to test for NaN
 func (f Decimal) LessThan(f0 Decimal) bool {
 	if f.IsNaN() || f0.IsNaN() {
 		return false
@@ -281,7 +281,7 @@ func (f Decimal) LessThan(f0 Decimal) bool {
 	return false
 }
 
-// LessThan tests Cmp() for -1 or 0
+// LessThan returns true if the f <= f0. If either operand is NaN, false is returned. Use IsNaN() to test for NaN
 func (f Decimal) LessThanOrEqual(f0 Decimal) bool {
 	if f.IsNaN() || f0.IsNaN() {
 		return false
