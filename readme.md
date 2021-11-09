@@ -13,8 +13,7 @@ It is ideally suited for high performance trading financial systems. All common 
 
 **Design Goals**
 
-Primarily developed to test performance charactersitics in an order book
-Using Decimal rather than decimal.Decimal improves the performance by over 20%, and a lot less GC activity as well.
+Primarily developed to test performance charactersitics in an order book.
 
 The decimal.Decimal API uses NaN for reporting errors in the common case, since often code is chained like:
 ```
