@@ -189,3 +189,14 @@ func BenchmarkWriteTo(b *testing.B) {
 		f0.WriteTo(buf)
 	}
 }
+
+var res bool
+
+func BenchmarkEqualDecimal(b *testing.B) {
+	f0 := NewF(1)
+	f1 := NewF(1)
+
+	for i := 0; i < b.N; i++ {
+		res = f1.Equal(f0)
+	}
+}
