@@ -9,8 +9,8 @@ import (
 )
 
 func BenchmarkAddDecimal(b *testing.B) {
-	f0 := NewF(1)
-	f1 := NewF(1)
+	f0 := MustParseFloat(1)
+	f1 := MustParseFloat(1)
 
 	for i := 0; i < b.N; i++ {
 		f1 = f1.Add(f0)
@@ -42,8 +42,8 @@ func BenchmarkAddBigFloat(b *testing.B) {
 }
 
 func BenchmarkMulDecimal(b *testing.B) {
-	f0 := NewF(123456789.0)
-	f1 := NewF(1234.0)
+	f0 := MustParseFloat(123456789.0)
+	f1 := MustParseFloat(1234.0)
 
 	for i := 0; i < b.N; i++ {
 		f0.Mul(f1)
@@ -77,8 +77,8 @@ func BenchmarkMulBigFloat(b *testing.B) {
 }
 
 func BenchmarkDivDecimal(b *testing.B) {
-	f0 := NewF(123456789.0)
-	f1 := NewF(1234.0)
+	f0 := MustParseFloat(123456789.0)
+	f1 := MustParseFloat(1234.0)
 
 	for i := 0; i < b.N; i++ {
 		f0.Div(f1)
@@ -112,8 +112,8 @@ func BenchmarkDivBigFloat(b *testing.B) {
 }
 
 func BenchmarkCmpDecimal(b *testing.B) {
-	f0 := NewF(123456789.0)
-	f1 := NewF(1234.0)
+	f0 := MustParseFloat(123456789.0)
+	f1 := MustParseFloat(1234.0)
 
 	for i := 0; i < b.N; i++ {
 		f0.Cmp(f1)
@@ -145,14 +145,14 @@ func BenchmarkCmpBigFloat(b *testing.B) {
 }
 
 func BenchmarkStringDecimal(b *testing.B) {
-	f0 := NewF(123456789.12345)
+	f0 := MustParseFloat(123456789.12345)
 
 	for i := 0; i < b.N; i++ {
 		f0.String()
 	}
 }
 func BenchmarkStringNDecimal(b *testing.B) {
-	f0 := NewF(123456789.12345)
+	f0 := MustParseFloat(123456789.12345)
 
 	for i := 0; i < b.N; i++ {
 		f0.StringN(5)
@@ -181,7 +181,7 @@ func BenchmarkStringBigFloat(b *testing.B) {
 }
 
 func BenchmarkWriteTo(b *testing.B) {
-	f0 := NewF(123456789.0)
+	f0 := MustParseFloat(123456789.0)
 
 	buf := new(bytes.Buffer)
 
@@ -193,8 +193,8 @@ func BenchmarkWriteTo(b *testing.B) {
 var res bool
 
 func BenchmarkEqualDecimal(b *testing.B) {
-	f0 := NewF(1)
-	f1 := NewF(1)
+	f0 := MustParseFloat(1)
+	f1 := MustParseFloat(1)
 
 	for i := 0; i < b.N; i++ {
 		res = f1.Equal(f0)
@@ -202,8 +202,8 @@ func BenchmarkEqualDecimal(b *testing.B) {
 }
 
 func BenchmarkLessThanDecimal(b *testing.B) {
-	f0 := NewF(1)
-	f1 := NewF(1)
+	f0 := MustParseFloat(1)
+	f1 := MustParseFloat(1)
 
 	for i := 0; i < b.N; i++ {
 		res = f1.LessThan(f0)
@@ -211,8 +211,8 @@ func BenchmarkLessThanDecimal(b *testing.B) {
 }
 
 func BenchmarkLessThanOrEqualDecimal(b *testing.B) {
-	f0 := NewF(1)
-	f1 := NewF(1)
+	f0 := MustParseFloat(1)
+	f1 := MustParseFloat(1)
 
 	for i := 0; i < b.N; i++ {
 		res = f1.LessThanOrEqual(f0)
@@ -220,8 +220,8 @@ func BenchmarkLessThanOrEqualDecimal(b *testing.B) {
 }
 
 func BenchmarkGreaterThanDecimal(b *testing.B) {
-	f0 := NewF(1)
-	f1 := NewF(1)
+	f0 := MustParseFloat(1)
+	f1 := MustParseFloat(1)
 
 	for i := 0; i < b.N; i++ {
 		res = f1.GreaterThan(f0)
@@ -229,8 +229,8 @@ func BenchmarkGreaterThanDecimal(b *testing.B) {
 }
 
 func BenchmarkGreaterThanOrEqualDecimal(b *testing.B) {
-	f0 := NewF(1)
-	f1 := NewF(1)
+	f0 := MustParseFloat(1)
+	f1 := MustParseFloat(1)
 
 	for i := 0; i < b.N; i++ {
 		res = f1.GreaterThanOrEqual(f0)
