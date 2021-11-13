@@ -1,6 +1,6 @@
 package udecimal
 
-// release under the terms of file license.txt
+// release under the terms of file LICENSE and LICENSE-FIXED
 
 import (
 	"encoding/binary"
