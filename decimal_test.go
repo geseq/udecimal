@@ -6,111 +6,79 @@ import (
 	"testing"
 
 	. "github.com/geseq/udecimal"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBasic(t *testing.T) {
 	f0 := MustParse("123.456")
 	f1 := MustParse("123.456")
 
-	if !f0.Equal(f1) {
-		t.Error("should be equal", f0, f1)
-	}
-
-	if f0.Int() != 123 {
-		t.Error("should be equal", f0.Int(), 123)
-	}
-
-	if f0.String() != "123.456" {
-		t.Error("should be equal", f0.String(), "123.456")
-	}
+	assert.Equal(t, f0, f1)
+	assert.True(t, f0.Equal(f1))
+	assert.True(t, f1.Equal(f0))
+	assert.Equal(t, uint64(123), f0.Int())
+	assert.Equal(t, uint64(123), f1.Int())
+	assert.Equal(t, "123.456", f0.String())
+	assert.Equal(t, "123.456", f1.String())
 
 	f0 = MustParseFloat(1)
 	f1 = MustParseFloat(.5).Add(MustParseFloat(.5))
 	f2 := MustParseFloat(.3).Add(MustParseFloat(.3)).Add(MustParseFloat(.4))
 
-	if !f0.Equal(f1) {
-		t.Error("should be equal", f0, f1)
-	}
-	if !f0.Equal(f2) {
-		t.Error("should be equal", f0, f2)
-	}
+	assert.True(t, f0.Equal(f1))
+	assert.True(t, f0.Equal(f2))
 
 	f0 = MustParseFloat(.999)
-	if f0.String() != "0.999" {
-		t.Error("should be equal", f0, "0.999")
-	}
+	assert.Equal(t, "0.999", f0.String())
 }
 
 func TestEqual(t *testing.T) {
 	f0 := Zero
 	f1 := MustParse("123.456")
-	if f0.Equal(f1) {
-		t.Error("should not be equal", f0, f1)
-	}
-
-	if f1.Equal(f0) {
-		t.Error("should not be equal", f0, f1)
-	}
+	assert.NotEqual(t, f0, f1)
+	assert.False(t, f0.Equal(f1))
+	assert.False(t, f1.Equal(f0))
 
 	f1 = Zero
-	if f0.Equal(f1) {
-		t.Error("should not be equal", f0, f1)
-	}
+	assert.True(t, f0.Equal(f1))
 
 	f0 = Zero
-	if !f0.Equal(f1) {
-		t.Error("should be equal", f0, f1)
-	}
-
-	if f0.Int() != 0 {
-		t.Error("should be equal", f0.Int(), 0)
-	}
+	assert.True(t, f0.Equal(f1))
+	assert.Equal(t, uint64(0), f0.Int())
 }
 
 func TestNew(t *testing.T) {
 	f := New(123, 1)
-	if f.String() != "1230" {
-		t.Error("should be equal", f, "1230")
-	}
-	f = New(123, 0)
-	if f.String() != "123" {
-		t.Error("should be equal", f, "123")
-	}
-	f = New(123456789012, 9)
-	if f.String() != "NaN" {
-		t.Error("should be equal", f, "NaN")
-	}
-	f = New(123, -1)
-	if f.String() != "12.3" {
-		t.Error("should be equal", f, "12.3")
-	}
-	f = New(123456789001, -9)
-	if f.String() != "123.456789" {
-		t.Error("should be equal", f, "123.456789")
-	}
-	f = New(123456789012, -9)
-	if f.StringN(7) != "123.4567890" {
-		t.Error("should be equal", f.StringN(7), "123.4567890")
-	}
-	f = New(123456789012, -9)
-	if f.StringN(8) != "123.45678901" {
-		t.Error("should be equal", f.StringN(8), "123.45678901")
-	}
+	assert.Equal(t, "1230", f.String())
 
+	f = New(123, 0)
+	assert.Equal(t, "123", f.String())
+
+	//	f = New(123456789012, 9)
+	//	assert.Equal(t, "123", f.String())
+
+	f = New(123, -1)
+	assert.Equal(t, "12.3", f.String())
+
+	f = New(123456789001, -9)
+	assert.Equal(t, "123.456789", f.String())
+
+	f = New(123456789012, -9)
+	assert.Equal(t, "123.4567890", f.StringN(7))
+
+	f = New(123456789012, -9)
+	assert.Equal(t, "123.45678901", f.StringN(8))
 }
 
 func TestParse(t *testing.T) {
 	_, err := Parse("123")
-	if err != nil {
-		t.Fail()
+	assert.NoError(t, err)
 
-	}
+	_, err = Parse("123,456")
+	assert.Error(t, err)
+
 	_, err = Parse("abc")
-	if err == nil {
-		t.Fail()
-
-	}
-
+	assert.Error(t, err)
 }
 
 func TestMustParse(t *testing.T) {
@@ -121,67 +89,46 @@ func TestMustParse(t *testing.T) {
 		}
 
 	}()
-	_ = MustParse("abc")
 
+	_ = MustParse("abc")
 }
 
 func TestNewI(t *testing.T) {
 	f := NewI(123, 1)
-	if f.String() != "12.3" {
-		t.Error("should be equal", f, "12.3")
-	}
+	assert.Equal(t, "12.3", f.String())
+
 	f = NewI(123, 0)
-	if f.String() != "123" {
-		t.Error("should be equal", f, "123")
-	}
+	assert.Equal(t, "123", f.String())
+
 	f = NewI(123456789001, 9)
-	if f.String() != "123.456789" {
-		t.Error("should be equal", f, "123.456789")
-	}
+	assert.Equal(t, "123.456789", f.String())
+
 	f = NewI(123456789012, 9)
-	if f.StringN(7) != "123.4567890" {
-		t.Error("should be equal", f.StringN(7), "123.4567890")
-	}
+	assert.Equal(t, "123.4567890", f.StringN(7))
+	assert.Equal(t, "123.45678901", f.String())
+
 	f = NewI(123456789012, 9)
-	if f.StringN(8) != "123.45678901" {
-		t.Error("should be equal", f.StringN(8), "123.45678901")
-	}
+	assert.Equal(t, "123.45678901", f.StringN(8))
 }
 
 func TestMaxValue(t *testing.T) {
 	f0 := MustParse("12345678901")
-	if f0.String() != "12345678901" {
-		t.Error("should be equal", f0, "12345678901")
-	}
-	f0 = MustParse("123456789012")
-	if f0.String() != "NaN" {
-		t.Error("should be equal", f0, "NaN")
-	}
-	f0 = MustParse("-12345678901")
-	if f0.String() != "NaN" {
-		t.Error("should be equal", f0, "NaN")
-	}
-	f0 = MustParse("-123456789012")
-	if f0.String() != "NaN" {
-		t.Error("should be equal", f0, "NaN")
-	}
-	f0 = MustParse("99999999999")
-	if f0.String() != "99999999999" {
-		t.Error("should be equal", f0, "99999999999")
-	}
-	f0 = MustParse("9.99999999")
-	if f0.String() != "9.99999999" {
-		t.Error("should be equal", f0, "9.99999999")
-	}
-	f0 = MustParse("99999999999.99999999")
-	if f0.String() != "99999999999.99999999" {
-		t.Error("should be equal", f0, "99999999999.99999999")
-	}
-	f0 = MustParse("99999999999.12345678901234567890")
-	if f0.String() != "99999999999.12345678" {
-		t.Error("should be equal", f0, "99999999999.12345678")
-	}
+	assert.Equal(t, f0.String(), "12345678901")
+	assert.Panics(t, func() { f0 = MustParse("123456789012") })
+	assert.Panics(t, func() { f0 = MustParse("-12345678901") })
+	assert.Panics(t, func() { f0 = MustParse("-123456789012") })
 
+	f0 = MustParse("99999999999")
+	assert.Equal(t, f0.String(), "99999999999")
+
+	f0 = MustParse("9.99999999")
+	assert.Equal(t, f0.String(), "9.99999999")
+
+	f0 = MustParse("99999999999.99999999")
+	assert.Equal(t, f0.String(), "99999999999.99999999")
+
+	f0 = MustParse("99999999999.12345678901234567890")
+	assert.Equal(t, f0.String(), "99999999999.12345678")
 }
 
 func TestFloat(t *testing.T) {
@@ -257,20 +204,6 @@ func TestAddSub(t *testing.T) {
 
 }
 
-func TestAbs(t *testing.T) {
-	f := MustParse("NaN")
-	// TODO Handle panic
-
-	f = MustParse("1")
-	if f.String() != "1" {
-		t.Error("should be equal", f, "1")
-	}
-	f = MustParse("-1")
-	if f.String() != "NaN" {
-		t.Error("should be equal", f, "NaN")
-	}
-}
-
 func TestMulDiv(t *testing.T) {
 	f0 := MustParse("123.456")
 	f1 := MustParse("1000")
@@ -285,38 +218,6 @@ func TestMulDiv(t *testing.T) {
 	f2 = f0.Mul(f1)
 	if f2.String() != "12.3456" {
 		t.Error("should be equal", f2.String(), "12.3456")
-	}
-
-	f0 = MustParse("123.456")
-	f1 = MustParse("-1000")
-
-	f2 = f0.Mul(f1)
-	if f2.String() != "NaN" {
-		t.Error("should be equal", f2.String(), "NaN")
-	}
-
-	f0 = MustParse("-123.456")
-	f1 = MustParse("-1000")
-
-	f2 = f0.Mul(f1)
-	if f2.String() != "NaN" {
-		t.Error("should be equal", f2.String(), "NaN")
-	}
-
-	f0 = MustParse("123.456")
-	f1 = MustParse("-1000")
-
-	f2 = f0.Mul(f1)
-	if f2.String() != "NaN" {
-		t.Error("should be equal", f2.String(), "NaN")
-	}
-
-	f0 = MustParse("-123.456")
-	f1 = MustParse("-1000")
-
-	f2 = f0.Mul(f1)
-	if f2.String() != "NaN" {
-		t.Error("should be equal", f2.String(), "NaN")
 	}
 
 	f0 = MustParse("10000.1")
@@ -367,27 +268,17 @@ func TestMulDiv(t *testing.T) {
 }
 
 func TestNegatives(t *testing.T) {
+	assert.Panics(t, func() { MustParse("-1") })
+
 	f0 := MustParse("99")
 	f1 := MustParse("100")
 
-	f2 := f0.Sub(f1)
-	if f2.String() != "NaN" {
-		t.Error("should be equal", f2.String(), "NaN")
-	}
-	f0 = MustParse("-1")
-	f1 = MustParse("-1")
+	assert.Panics(t, func() { f0.Sub(f1) })
 
-	f2 = f0.Sub(f1)
-	if f2.String() != "NaN" {
-		t.Error("should be equal", f2.String(), "NaN")
-	}
 	f0 = MustParse(".001")
 	f1 = MustParse(".002")
 
-	f2 = f0.Sub(f1)
-	if f2.String() != "NaN" {
-		t.Error("should be equal", f2.String(), "NaN")
-	}
+	assert.Panics(t, func() { f0.Sub(f1) })
 }
 
 func TestOverflow(t *testing.T) {
@@ -410,16 +301,13 @@ func TestOverflow(t *testing.T) {
 }
 
 func TestNaN(t *testing.T) {
-	f0 := MustParseFloat(math.NaN())
-	if f0.String() != "NaN" {
-		t.Error("should be equal", f0.String(), "NaN")
-	}
-	f0 = MustParse("NaN")
-	f0 = MustParse("0.0004096")
+	assert.Panics(t, func() { MustParseFloat(math.NaN()) })
+	assert.Panics(t, func() { MustParse("NaN") })
+
+	f0 := MustParse("0.0004096")
 	if f0.String() != "0.0004096" {
 		t.Error("should be equal", f0.String(), "0.0004096")
 	}
-
 }
 
 func TestIntFrac(t *testing.T) {
@@ -494,18 +382,6 @@ func TestRound(t *testing.T) {
 
 	if f1.String() != "1.1235" {
 		t.Error("should be equal", f1, "1.1235")
-	}
-
-	f0 = MustParse("-1.12345")
-	f1 = f0.Round(3)
-
-	if f1.String() != "NaN" {
-		t.Error("should be equal", f1, "NaN")
-	}
-	f1 = f0.Round(4)
-
-	if f1.String() != "NaN" {
-		t.Error("should be equal", f1, "NaN")
 	}
 }
 
