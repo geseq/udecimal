@@ -5,51 +5,36 @@ package udecimal
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"math"
 	"strconv"
 	"strings"
 )
 
-// Decimal is a decimal precision 38.24 number (supports 11.7 digits). It supports NaN.
+// Decimal is a decimal precision 38.24 number (supports 11.7 digits).
 type Decimal struct {
 	fp uint64
 }
 
 // the following constants can be changed to configure a different number of decimal places - these are
-// the only required changes. only 18 significant digits are supported due to NaN
-
+// the only required changes.
 const nPlaces = 8
 const scale = uint64(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)
 const zeros = "00000000"
 const MAX = float64(99999999999.99999999)
 
-const nan = uint64(1<<63 - 1)
-
-var NaN = Decimal{fp: nan}
 var Zero = Decimal{fp: 0}
 
 var errTooLarge = errors.New("significand too large")
 var errFormat = errors.New("invalid encoding")
 
-// NewS creates a new Decimal from a string, returning NaN if the string could not be parsed
-func NewS(s string) Decimal {
-	f, _ := NewSErr(s)
-	return f
-}
-
-// NewSErr creates a new Decimal from a string, returning NaN, and error if the string could not be parsed
-func NewSErr(s string) (Decimal, error) {
+func Parse(s string) (Decimal, error) {
 	if strings.ContainsAny(s, "eE") {
 		f, err := strconv.ParseFloat(s, 64)
 		if err != nil {
-			return NaN, err
+			return Zero, err
 		}
-		return NewF(f), nil
-	}
-	if "NaN" == s {
-		return NaN, nil
+		return ParseFloat(f)
 	}
 	period := strings.Index(s, ".")
 	var i uint64
@@ -58,44 +43,35 @@ func NewSErr(s string) (Decimal, error) {
 	if period == -1 {
 		i, err = strconv.ParseUint(s, 10, 64)
 		if err != nil {
-			return NaN, errors.New("cannot parse")
+			return Zero, errors.New("cannot parse")
 		}
 	} else {
 		if len(s[:period]) > 0 {
 			i, err = strconv.ParseUint(s[:period], 10, 64)
 			if err != nil {
-				return NaN, errors.New("cannot parse")
+				return Zero, errors.New("cannot parse")
 			}
 		}
 		fs := s[period+1:]
 		fs = fs + zeros[:max(0, nPlaces-len(fs))]
 		f, err = strconv.ParseUint(fs[0:nPlaces], 10, 64)
 		if err != nil {
-			return NaN, errors.New("cannot parse")
+			return Zero, errors.New("cannot parse")
 		}
 	}
 	if float64(i) > MAX {
-		return NaN, errTooLarge
+		return Zero, errTooLarge
 	}
 	return Decimal{fp: (i*scale + f)}, nil
 }
 
-// Parse creates a new Fixed from a string, returning NaN, and error if the string could not be parsed. Same as NewSErr
-// but more standard naming
-func Parse(s string) (Decimal, error) {
-	return NewSErr(s)
-
-}
-
 // MustParse creates a new Fixed from a string, and panics if the string could not be parsed
 func MustParse(s string) Decimal {
-	f, err := NewSErr(s)
+	f, err := Parse(s)
 	if err != nil {
 		panic(err)
-
 	}
 	return f
-
 }
 
 func max(a, b int) int {
@@ -105,20 +81,29 @@ func max(a, b int) int {
 	return b
 }
 
-// NewF creates a Decimal from an float64, rounding at the 8th decimal place
-func NewF(f float64) Decimal {
+// ParseFloat creates a Decimal from an float64, rounding at the 8th decimal place
+func ParseFloat(f float64) (Decimal, error) {
 	if math.IsNaN(f) {
-		return Decimal{fp: nan}
+		return Zero, errors.New("invalid input")
 	}
-	if f >= MAX || f <= -MAX {
-		return NaN
+	if f >= MAX || f < 0 {
+		return Zero, errors.New("invalid input")
 	}
 	round := .5
 	if f < 0 {
 		round = -0.5
 	}
 
-	return Decimal{fp: uint64(f*float64(scale) + round)}
+	return Decimal{fp: uint64(f*float64(scale) + round)}, nil
+}
+
+// MustParseFloat creates a new Fixed from a string, and panics if the string could not be parsed
+func MustParseFloat(f float64) Decimal {
+	r, err := ParseFloat(f)
+	if err != nil {
+		panic(err)
+	}
+	return r
 }
 
 // New returns a new fixed-point decimal, value * 10 ^ exp.
@@ -144,45 +129,35 @@ func NewI(i uint64, n uint) Decimal {
 	return Decimal{fp: i}
 }
 
-func (f Decimal) IsNaN() bool {
-	return f.fp == nan
-}
-
 func (f Decimal) IsZero() bool {
 	return f.Equal(Zero)
 }
 
 // Float converts the Decimal to a float64
 func (f Decimal) Float() float64 {
-	if f.IsNaN() {
-		return math.NaN()
-	}
 	return float64(f.fp) / float64(scale)
 }
 
-// Add adds f0 to f producing a Decimal. If either operand is NaN, NaN is returned
+// Add adds f0 to f producing a Decimal.
 func (f Decimal) Add(f0 Decimal) Decimal {
-	if f.IsNaN() || f0.IsNaN() {
-		return NaN
+	if f0.fp > math.MaxUint64-f.fp {
+		panic("decimal overflow")
 	}
+
 	return Decimal{fp: f.fp + f0.fp}
 }
 
-// Sub subtracts f0 from f producing a Decimal. If either operand is NaN, NaN is returned
+// Sub subtracts f0 from f producing a Decimal.
 func (f Decimal) Sub(f0 Decimal) Decimal {
-	if f.IsNaN() || f0.IsNaN() || f.fp < f0.fp {
-		return NaN
+	if f.fp < f0.fp {
+		panic("decimal overflow")
 	}
 
 	return Decimal{fp: f.fp - f0.fp}
 }
 
-// Mul multiplies f by f0 returning a Decimal. If either operand is NaN, NaN is returned
+// Mul multiplies f by f0 returning a Decimal.
 func (f Decimal) Mul(f0 Decimal) Decimal {
-	if f.IsNaN() || f0.IsNaN() {
-		return NaN
-	}
-
 	fp_a := f.fp / scale
 	fp_b := f.fp % scale
 
@@ -194,7 +169,7 @@ func (f Decimal) Mul(f0 Decimal) Decimal {
 	if fp0_a != 0 {
 		result = fp_a * fp0_a
 		if float64(result) > MAX {
-			return NaN
+			panic("decimal overflow")
 		}
 
 		result = result*scale + fp_b*fp0_a
@@ -207,20 +182,17 @@ func (f Decimal) Mul(f0 Decimal) Decimal {
 	return Decimal{fp: result}
 }
 
-// Div divides f by f0 returning a Decimal. If either operand is NaN, NaN is returned
+// Div divides f by f0 returning a Decimal.
 func (f Decimal) Div(f0 Decimal) Decimal {
-	if f.IsNaN() || f0.IsNaN() {
-		return NaN
+	res, err := ParseFloat(f.Float() / f0.Float())
+	if err != nil {
+		panic("decimal overflow")
 	}
-	return NewF(f.Float() / f0.Float())
+	return res
 }
 
 // Round returns a rounded (half-up, away from zero) to n decimal places
 func (f Decimal) Round(n int) Decimal {
-	if f.IsNaN() {
-		return NaN
-	}
-
 	round := .5
 	if f.fp < 0 {
 		round = -0.5
@@ -230,81 +202,55 @@ func (f Decimal) Round(n int) Decimal {
 	f0 = f0*math.Pow10(n) + round
 	f0 = float64(int(f0)) / math.Pow10(n)
 
-	return NewF(float64(f.Int()) + f0)
+	res, err := ParseFloat(float64(f.Int()) + f0)
+	if err != nil {
+		panic("decimal overflow")
+	}
+	return res
 }
 
-// Equal returns true if the f == f0. If either operand is NaN, false is returned. Use IsNaN() to test for NaN
+// Equal returns true if the f == f0.
 func (f Decimal) Equal(f0 Decimal) bool {
-	if f.IsNaN() || f0.IsNaN() {
-		return false
-	}
-
 	if f.fp == f0.fp {
 		return true
 	}
 	return false
 }
 
-// GreaterThan returns true if the f > f0. If either operand is NaN, false is returned. Use IsNaN() to test for NaN
+// GreaterThan returns true if the f > f0.
 func (f Decimal) GreaterThan(f0 Decimal) bool {
-	if f.IsNaN() || f0.IsNaN() {
-		return false
-	}
-
 	if f.fp > f0.fp {
 		return true
 	}
 	return false
 }
 
-// GreaterThaOrEqual returns true if the f >= f0. If either operand is NaN, false is returned. Use IsNaN() to test for NaN
+// GreaterThaOrEqual returns true if the f >= f0.
 func (f Decimal) GreaterThanOrEqual(f0 Decimal) bool {
-	if f.IsNaN() || f0.IsNaN() {
-		return false
-	}
-
 	if f.fp >= f0.fp {
 		return true
 	}
 	return false
 }
 
-// LessThan returns true if the f < f0. If either operand is NaN, false is returned. Use IsNaN() to test for NaN
+// LessThan returns true if the f < f0.
 func (f Decimal) LessThan(f0 Decimal) bool {
-	if f.IsNaN() || f0.IsNaN() {
-		return false
-	}
-
 	if f.fp < f0.fp {
 		return true
 	}
 	return false
 }
 
-// LessThan returns true if the f <= f0. If either operand is NaN, false is returned. Use IsNaN() to test for NaN
+// LessThan returns true if the f <= f0.
 func (f Decimal) LessThanOrEqual(f0 Decimal) bool {
-	if f.IsNaN() || f0.IsNaN() {
-		return false
-	}
-
 	if f.fp <= f0.fp {
 		return true
 	}
 	return false
 }
 
-// Cmp compares two Decimal. If f == f0, return 0. If f > f0, return 1. If f < f0, return -1. If both are NaN, return 0. If f is NaN, return 1. If f0 is NaN, return -1
+// Cmp compares two Decimal. If f == f0, return 0. If f > f0, return 1. If f < f0, return -1.
 func (f Decimal) Cmp(f0 Decimal) int {
-	if f.IsNaN() && f0.IsNaN() {
-		return 0
-	}
-	if f.IsNaN() {
-		return 1
-	}
-	if f0.IsNaN() {
-		return -1
-	}
-
 	if f.fp == f0.fp {
 		return 0
 	}
@@ -348,9 +294,6 @@ func (f Decimal) tostr() (string, int) {
 	if fp == 0 {
 		return "0." + zeros, 1
 	}
-	if fp == nan {
-		return "NaN", -1
-	}
 
 	b := make([]byte, 24)
 	b = itoa(b, fp)
@@ -374,19 +317,13 @@ func itoa(buf []byte, val uint64) []byte {
 	return buf[i:]
 }
 
-// Int return the integer portion of the Decimal, or 0 if NaN
+// Int return the integer portion of the Decimal
 func (f Decimal) Int() uint64 {
-	if f.IsNaN() {
-		return 0
-	}
 	return f.fp / scale
 }
 
-// Frac return the fractional portion of the Decimal, or NaN if NaN
+// Frac return the fractional portion of the Decimal
 func (f Decimal) Frac() float64 {
-	if f.IsNaN() {
-		return math.NaN()
-	}
 	return float64(f.fp%scale) / float64(scale)
 }
 
@@ -426,36 +363,7 @@ func (f Decimal) WriteTo(w io.ByteWriter) error {
 func ReadFrom(r io.ByteReader) (Decimal, error) {
 	fp, err := binary.ReadUvarint(r)
 	if err != nil {
-		return NaN, err
+		return Zero, err
 	}
 	return Decimal{fp: fp}, nil
-}
-
-// UnmarshalJSON implements the json.Unmarshaler interface.
-func (f *Decimal) UnmarshalJSON(bytes []byte) error {
-	s := string(bytes)
-	if s == "null" {
-		return nil
-	}
-	if s == "\"NaN\"" {
-		*f = NaN
-		return nil
-	}
-
-	decimal, err := NewSErr(s)
-	*f = decimal
-	if err != nil {
-		return fmt.Errorf("Error decoding string '%s': %s", s, err)
-	}
-	return nil
-}
-
-// MarshalJSON implements the json.Marshaler interface.
-func (f Decimal) MarshalJSON() ([]byte, error) {
-	if f.IsNaN() {
-		return []byte("\"NaN\""), nil
-	}
-
-	buffer := make([]byte, 24)
-	return itoa(buffer, f.fp), nil
 }
