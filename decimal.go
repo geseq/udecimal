@@ -5,6 +5,7 @@ package udecimal
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"strconv"
@@ -366,4 +367,25 @@ func ReadFrom(r io.ByteReader) (Decimal, error) {
 		return Zero, err
 	}
 	return Decimal{fp: fp}, nil
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (f *Decimal) UnmarshalJSON(bytes []byte) error {
+	s := string(bytes)
+	if s == "null" {
+		return nil
+	}
+
+	decimal, err := Parse(s)
+	*f = decimal
+	if err != nil {
+		return fmt.Errorf("Error decoding string '%s': %s", s, err)
+	}
+	return nil
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (f Decimal) MarshalJSON() ([]byte, error) {
+	buffer := make([]byte, 24)
+	return itoa(buffer, f.fp), nil
 }
