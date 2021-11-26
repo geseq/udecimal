@@ -15,12 +15,7 @@ It is ideally suited for high performance trading financial systems. All common 
 
 Primarily developed to test performance charactersitics in an order book.
 
-The decimal.Decimal API uses NaN for reporting errors in the common case, since often code is chained like:
-```
-result := someDecimal.Mul(NewS("123.50"))
-```
-and this would be a huge pain with error handling. Since all operations involving a NaN result in a NaN,
-any errors quickly surface anyway.
+The decimal.Decimal API uses panics for some error handling, since critical operation errors would be unrecoverable in a deterministic order book.
 
 
 **Performance**
